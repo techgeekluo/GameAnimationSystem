@@ -25,6 +25,7 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void OnPossess(APawn* InPawn) override;
+	virtual void OnUnPossess() override;
 
 protected:
 	UFUNCTION()
@@ -32,7 +33,7 @@ protected:
 
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_MoverPawn)
-	class AGASPMoverPawn* MoverPawn;
+	class AGASPMoverCharacter* MoverCharacter;
 
 	/** 俯仰角限制 */
 	UPROPERTY(EditAnywhere, Category = "GASP|CameraManager")

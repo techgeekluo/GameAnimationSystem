@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "GASPLocomotionTypes.generated.h"
@@ -38,10 +38,10 @@ enum class EGASPMovementMode : uint8
 UENUM(BlueprintType)
 enum class EGASPMoveStickMode : uint8
 {
-	FixedSpeed_SingleGait,		// ¹Ì¶¨ËÙ¶È£¬µ¥Ò»²½Ì¬£ºStickÊäÈëÖµ²»Ó°ÏìËÙ¶ÈºÍ²½Ì¬
-	FixedSpeed_WalkRun,			// ¹Ì¶¨ËÙ¶È£¬×ßÅÜÇĞ»»£ºStickÊäÈëÖµ²»Ó°ÏìËÙ¶È£¬À­Âú»áÇĞÎ»ÅÜ²½
-	VariableSpeed_SingleGait,	// ¿É±äËÙ¶È£¬µ¥Ò»²½Ì¬£ºStickÊäÈëÖµÓ°ÏìËÙ¶È£¬µ«²»Ó°Ïì²½Ì¬
-	VariableSpped_WalkRun		// ¿É±äËÙ¶È£¬×ßÅÜÇĞ»»£ºStickÊäÈëÖµÓ°ÏìËÙ¶È£¬À­Âú»áÇĞÎ»ÅÜ²½
+	FixedSpeed_SingleGait,		// å›ºå®šé€Ÿåº¦ï¼Œå•ä¸€æ­¥æ€ï¼šStickè¾“å…¥å€¼ä¸å½±å“é€Ÿåº¦å’Œæ­¥æ€
+	FixedSpeed_WalkRun,			// å›ºå®šé€Ÿåº¦ï¼Œèµ°è·‘åˆ‡æ¢ï¼šStickè¾“å…¥å€¼ä¸å½±å“é€Ÿåº¦ï¼Œæ‹‰æ»¡ä¼šåˆ‡ä½è·‘æ­¥
+	VariableSpeed_SingleGait,	// å¯å˜é€Ÿåº¦ï¼Œå•ä¸€æ­¥æ€ï¼šStickè¾“å…¥å€¼å½±å“é€Ÿåº¦ï¼Œä½†ä¸å½±å“æ­¥æ€
+	VariableSpeed_WalkRun		// å¯å˜é€Ÿåº¦ï¼Œèµ°è·‘åˆ‡æ¢ï¼šStickè¾“å…¥å€¼å½±å“é€Ÿåº¦ï¼Œæ‹‰æ»¡ä¼šåˆ‡ä½è·‘æ­¥
 };
 
 

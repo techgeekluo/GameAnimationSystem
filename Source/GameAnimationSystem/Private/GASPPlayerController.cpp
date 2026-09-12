@@ -1,19 +1,18 @@
-// Copyright: Jichao Luo
+ï»¿// Copyright: Jichao Luo
 
 
 #include "GASPPlayerController.h"
-#include "GASPMoverPawn.h"
-#include "GASPMoverCharacter.h"
+#include "Mover/GASPMoverCharacter.h"
 #include "InputMappingContext.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Net/UnrealNetwork.h"
 
-#define CHECK_MOVER_PAWN \
-if (!MoverPawn) \
+#define CHECK_MOVER \
+if (!MoverCharacter) \
 { \
-	MoverPawn = Cast<AGASPMoverPawn>(GetPawn()); \
-	if (!MoverPawn) return; \
+	MoverCharacter = Cast<AGASPMoverCharacter>(GetPawn()); \
+	if (!MoverCharacter) return; \
 };
 
 AGASPPlayerController::AGASPPlayerController()
@@ -23,54 +22,53 @@ AGASPPlayerController::AGASPPlayerController()
 
 	{
 		static ConstructorHelpers::FObjectFinder<UInputMappingContext> IMC_LocomotionAsset(
-			TEXT("/GameAnimationSystem/Blueprints/Player/Inputs/Locomotion/IMC_GASP_Locomotion.IMC_GASP_Locomotion")
+			TEXT("/GameAnimationSystem/Player/Inputs/Locomotion/IMC_GASP_Locomotion.IMC_GASP_Locomotion")
 		);
 		if (IMC_LocomotionAsset.Succeeded()) { IMC_Locomotion = IMC_LocomotionAsset.Object; }
 
 		static ConstructorHelpers::FObjectFinder<UInputAction> IA_MoveAsset(
-			TEXT("/GameAnimationSystem/Blueprints/Player/Inputs/Locomotion/IA_GASP_Move.IA_GASP_Move")
+			TEXT("/GameAnimationSystem/Player/Inputs/Locomotion/IA_GASP_Move.IA_GASP_Move")
 		);
 		if (IA_MoveAsset.Succeeded()) { IA_Move = IA_MoveAsset.Object; }
 
 		static ConstructorHelpers::FObjectFinder<UInputAction> IA_LookAsset(
-			TEXT("/GameAnimationSystem/Blueprints/Player/Inputs/Locomotion/IA_GASP_Look.IA_GASP_Look")
+			TEXT("/GameAnimationSystem/Player/Inputs/Locomotion/IA_GASP_Look.IA_GASP_Look")
 		);
 		if (IA_LookAsset.Succeeded()) { IA_Look = IA_LookAsset.Object; }
 
 		static ConstructorHelpers::FObjectFinder<UInputAction> IA_JumpAsset(
-			TEXT("/GameAnimationSystem/Blueprints/Player/Inputs/Locomotion/IA_GASP_Jump.IA_GASP_Jump")
+			TEXT("/GameAnimationSystem/Player/Inputs/Locomotion/IA_GASP_Jump.IA_GASP_Jump")
 		);
 		if (IA_JumpAsset.Succeeded()) { IA_Jump = IA_JumpAsset.Object; }
 	}
 
 	{
 		static ConstructorHelpers::FObjectFinder<UInputMappingContext> IMC_CombatAsset(
-			TEXT("/GameAnimationSystem/Blueprints/Player/Inputs/Combat/IMC_GASP_Combat.IMC_GASP_Combat")
+			TEXT("/GameAnimationSystem/Player/Inputs/Combat/IMC_GASP_Combat.IMC_GASP_Combat")
 		);
 		if (IMC_CombatAsset.Succeeded()) { IMC_Combat = IMC_CombatAsset.Object; }
 
 		static ConstructorHelpers::FObjectFinder<UInputAction> IA_AimingAsset(
-			TEXT("/GameAnimationSystem/Blueprints/Player/Inputs/Combat/IA_GASP_Aiming.IA_GASP_Aiming")
+			TEXT("/GameAnimationSystem/Player/Inputs/Combat/IA_GASP_Aiming.IA_GASP_Aiming")
 		);
 		if (IA_AimingAsset.Succeeded()) { IA_Aiming = IA_AimingAsset.Object; }
 	}
 
 	{
 		static ConstructorHelpers::FObjectFinder<UInputMappingContext> IMC_DebugAsset(
-			TEXT("/GameAnimationSystem/Blueprints/Player/Inputs/Debug/IMC_GASP_Debug.IMC_GASP_Debug")
+			TEXT("/GameAnimationSystem/Player/Inputs/Debug/IMC_GASP_Debug.IMC_GASP_Debug")
 		);
 		if (IMC_DebugAsset.Succeeded()) { IMC_Debug = IMC_DebugAsset.Object; }
 
 		static ConstructorHelpers::FObjectFinder<UInputAction> IA_ViewModeAsset(
-			TEXT("/GameAnimationSystem/Blueprints/Player/Inputs/Debug/IA_GASP_ToggleViewMode.IA_GASP_ToggleViewMode")
+			TEXT("/GameAnimationSystem/Player/Inputs/Debug/IA_GASP_ToggleViewMode.IA_GASP_ToggleViewMode")
 		);
 		if (IA_ViewModeAsset.Succeeded()) { IA_ToggleViewMode = IA_ViewModeAsset.Object; }
 
 		static ConstructorHelpers::FObjectFinder<UInputAction> IA_RotationModeAsset(
-			TEXT("/GameAnimationSystem/Blueprints/Player/Inputs/Debug/IA_GASP_ToggleRotationMode.IA_GASP_ToggleRotationMode")
+			TEXT("/GameAnimationSystem/Player/Inputs/Debug/IA_GASP_ToggleRotationMode.IA_GASP_ToggleRotationMode")
 		);
 		if (IA_RotationModeAsset.Succeeded()) { IA_ToggleRotationMode = IA_RotationModeAsset.Object; }
-
 	}
 	
 }
@@ -79,7 +77,7 @@ void AGASPPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME_CONDITION(AGASPPlayerController, MoverPawn, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(AGASPPlayerController, MoverCharacter, COND_OwnerOnly);
 }
 
 void AGASPPlayerController::SetupInputComponent()
@@ -137,57 +135,64 @@ void AGASPPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
-	MoverPawn = Cast<AGASPMoverPawn>(InPawn);
-	if (MoverPawn)
+	MoverCharacter = Cast<AGASPMoverCharacter>(InPawn);
+	if (MoverCharacter)
 	{
-		// ½öÔÚ MoverPawn ´æÔÚÊ±£¬ÉèÖÃÆäÏà¹Ø×é¼þ
+		// ä»…åœ¨ MoverCharacter å­˜åœ¨æ—¶ï¼Œè®¾ç½®å…¶ç›¸å…³ç»„ä»¶
 	}
+}
+
+void AGASPPlayerController::OnUnPossess()
+{
+	Super::OnUnPossess();
+
+	MoverCharacter = nullptr;
 }
 
 void AGASPPlayerController::OnRep_MoverPawn()
 {
-	// Í¨¹ýÍøÂçÍ¬²½ÉèÖÃ MoverPawn Ïà¹Ø×é¼þ
+	// é€šè¿‡ç½‘ç»œåŒæ­¥è®¾ç½® MoverPawn ç›¸å…³ç»„ä»¶
 }
 
 void AGASPPlayerController::OnMoveTriggered(const FInputActionValue& Value)
 {
-	CHECK_MOVER_PAWN
-	MoverPawn->ReceiveMoveInput(Value.Get<FVector2D>());
+	CHECK_MOVER
+	FVector2D InputValue = Value.Get<FVector2D>();
+	if (InputValue.Size() > 0.1f)
+	{
+		MoverCharacter->ReceiveMoveInput(Value.Get<FVector2D>());
+	}
 }
 
 void AGASPPlayerController::OnMoveCompleted(const FInputActionValue& Value)
 {
-	// ³ÖÐøÁ¿£ºÖ»ÔÚ¡¸ËÉ¿ª¡¹ÕâÒ»¿ÌÇåÁã¡£
-	// Ç§Íò²»Òª¸Äµ½ OnProduceInput ÀïÈ¥Çå ¡ª¡ª ¹Ì¶¨ 60Hz Ä£ÄâÅÜÔÚ 30fps ÉÏÊ±Ò»Ö¡ÓÐ 2 ¸öÄ£Äâ²½£¬
-	// ÇåÔçÁË»áÂ©µôÒ»°ëÊäÈë£¨Ö¢×´£ºµÍÖ¡ÂÊÏÂ×ßÂ·Ò»¶ÙÒ»¶Ù£©
-	CHECK_MOVER_PAWN
-	MoverPawn->ReceiveMoveInput(FVector2D::ZeroVector);
+	// æŒç»­é‡ï¼šåªåœ¨ã€Œæ¾å¼€ã€è¿™ä¸€åˆ»æ¸…é›¶ã€‚
+	// åƒä¸‡ä¸è¦æ”¹åˆ° OnProduceInput é‡ŒåŽ»æ¸… â€”â€” å›ºå®š 60Hz æ¨¡æ‹Ÿè·‘åœ¨ 30fps ä¸Šæ—¶ä¸€å¸§æœ‰ 2 ä¸ªæ¨¡æ‹Ÿæ­¥ï¼Œ
+	// æ¸…æ—©äº†ä¼šæ¼æŽ‰ä¸€åŠè¾“å…¥ï¼ˆç—‡çŠ¶ï¼šä½Žå¸§çŽ‡ä¸‹èµ°è·¯ä¸€é¡¿ä¸€é¡¿ï¼‰
+	CHECK_MOVER
+	MoverCharacter->ReceiveMoveInput(FVector2D::ZeroVector);
 }
 
 void AGASPPlayerController::OnLookTriggered(const FInputActionValue& Value)
 {
 	FVector2D InputValue = Value.Get<FVector2D>();
-	AddYawInput(InputValue.X);
-	AddPitchInput(InputValue.Y);
+	if (InputValue.Size() > 0.1f)
+	{
+		AddYawInput(InputValue.X);
+		AddPitchInput(InputValue.Y);
+	}
 }
 
 void AGASPPlayerController::OnJumpStarted(const FInputActionValue& Value)
 {
-	CHECK_MOVER_PAWN
-	if (auto MoverChr = Cast<AGASPMoverCharacter>(MoverPawn)) 
-	{
-		MoverChr->ReceiveJumpStarted();
-	}
+	CHECK_MOVER
+	MoverCharacter->ReceiveJumpStarted();
 }
 
 void AGASPPlayerController::OnJumpReleased(const FInputActionValue& Value)
 {
-	CHECK_MOVER_PAWN
-	if (auto MoverChr = Cast<AGASPMoverCharacter>(MoverPawn))
-	{
-		MoverChr->ReceiveJumpReleased();
-
-	}
+	CHECK_MOVER
+	MoverCharacter->ReceiveJumpReleased();
 }
 
 void AGASPPlayerController::OnAimingStarted(const FInputActionValue& Value)

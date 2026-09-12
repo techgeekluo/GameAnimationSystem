@@ -1,4 +1,4 @@
-// Copyright: Jichao Luo
+ï»¿// Copyright: Jichao Luo
 
 
 #include "GASPFunctionLibrary.h"
@@ -7,10 +7,10 @@ float UGASPFunctionLibrary::DamperExactAlpha(float DeltaTime, float HalfLife)
 {
 	// https://theorangeduck.com/page/spring-roll-call#exactdamper
 	return 1.0f - FMath::InvExpApprox(Ln2 / (HalfLife + UE_SMALL_NUMBER) * DeltaTime);
-	// HalfLife±íÊ¾×èÄá¹ý³ÌµÄ°ëË¥ÆÚ£¬¼´ÖµÔÚÖ¸ÊýË¥¼õ¹ý³ÌÖÐ¼õÉÙÒ»°ëËùÐèµÄÊ±¼ä
-	// Ln2×ÔÈ»¶ÔÊýln(2)£¬´óÔ¼ÊÇ 0.69314718
-	// Ö¸ÊýË¥¼õµÄ°ëË¥ÆÚ¹«Ê½£ºe^(-¦Ë¡¤t) = 0.5£¬ÆäÖÐ¦ËÊÇË¥¼õ³£Êý£¬¦Ë = ln(2)/t
-	// FMath::InvExpApprox(x)Ìá¹©Ö¸Êý½üËÆº¯Êý£¬Ô¼µÈÓÚe^(-x)
+	// HalfLifeè¡¨ç¤ºé˜»å°¼è¿‡ç¨‹çš„åŠè¡°æœŸï¼Œå³å€¼åœ¨æŒ‡æ•°è¡°å‡è¿‡ç¨‹ä¸­å‡å°‘ä¸€åŠæ‰€éœ€çš„æ—¶é—´
+	// Ln2è‡ªç„¶å¯¹æ•°ln(2)ï¼Œå¤§çº¦æ˜¯ 0.69314718
+	// æŒ‡æ•°è¡°å‡çš„åŠè¡°æœŸå…¬å¼ï¼še^(-Î»Â·t) = 0.5ï¼Œå…¶ä¸­Î»æ˜¯è¡°å‡å¸¸æ•°ï¼ŒÎ» = ln(2)/t
+	// FMath::InvExpApprox(x)æä¾›æŒ‡æ•°è¿‘ä¼¼å‡½æ•°ï¼Œçº¦ç­‰äºŽe^(-x)
 }
 
 FRotator UGASPFunctionLibrary::DamperExactRotation(const FRotator& Current, const FRotator& Target, float DeltaTime, float HalfLife)
@@ -35,7 +35,7 @@ FRotator UGASPFunctionLibrary::LerpRotation(const FRotator& From, const FRotator
 
 float UGASPFunctionLibrary::RemapAngleForCounterClockwiseRotation(const float Angle)
 {
-	// CounterClockwiseRotationAngleThresholdÊÇÄæÊ±ÕëÐý×ªãÐÖµ£¬ÊÇ·À¶¶»º³åÇø£¬±ÜÃâ½Ç¶È²åÖµÔÚ180¡ã¸½½ü³öÏÖÌø±ä
+	// CounterClockwiseRotationAngleThresholdæ˜¯é€†æ—¶é’ˆæ—‹è½¬é˜ˆå€¼ï¼Œæ˜¯é˜²æŠ–ç¼“å†²åŒºï¼Œé¿å…è§’åº¦æ’å€¼åœ¨180Â°é™„è¿‘å‡ºçŽ°è·³å˜
 	return Angle > 180.0f - CounterClockwiseRotationAngleThreshold ? Angle - 360.0f : Angle;
 }
 

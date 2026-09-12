@@ -1,4 +1,4 @@
-// Copyright: Jichao Luo
+ï»¿// Copyright: Jichao Luo
 
 #pragma once
 
@@ -40,7 +40,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	static bool AngleInRange(float Angle, float MinAngle, float MaxAngle, float Buffer = 0.f, bool bIncreaseBuffer = true);
 
-	// ÅĞ¶ÏÄ³¸ö¶ÔÏóµÄÀ¶Í¼ÊµÀıÊÇ·ñÖØĞ´ÁËÄ³¸ö Func
+	// åˆ¤æ–­æŸä¸ªå¯¹è±¡çš„è“å›¾å®ä¾‹æ˜¯å¦é‡å†™äº†æŸä¸ª Func
 	UFUNCTION(BlueprintCallable)
 	static bool IsFuncImplementedInBlueprint(UObject* Object, const FName FuncName)
 	{
