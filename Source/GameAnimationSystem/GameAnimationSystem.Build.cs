@@ -40,7 +40,7 @@ public class GameAnimationSystem : ModuleRules
 				"SlateCore",
                 "EnhancedInput",
                 "UMG",
-
+                "NetworkPrediction",
                 "AnimationWarpingRuntime",
                 "MotionWarping",
                 "Mover",

@@ -11,7 +11,6 @@ enum class EGASPViewMode : uint8
 {
 	FirstPerson,
 	ThirdPerson,
-	TopDown,		// TODO
 };
 
 UENUM(BlueprintType)

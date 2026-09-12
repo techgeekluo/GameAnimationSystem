@@ -4,6 +4,10 @@
 
 #include "Modules/ModuleManager.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogGASP, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogGASPAnim, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogGASPMover, Log, All);
+
 class FGameAnimationSystemModule : public IModuleInterface
 {
 public:

@@ -2,6 +2,10 @@
 
 #include "GameAnimationSystem.h"
 
+DEFINE_LOG_CATEGORY(LogGASP);
+DEFINE_LOG_CATEGORY(LogGASPAnim);
+DEFINE_LOG_CATEGORY(LogGASPMover);
+
 #define LOCTEXT_NAMESPACE "FGameAnimationSystemModule"
 
 void FGameAnimationSystemModule::StartupModule()
