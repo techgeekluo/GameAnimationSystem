@@ -127,8 +127,6 @@ void AGASPPlayerController::BeginPlay()
 void AGASPPlayerController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-
-
 }
 
 void AGASPPlayerController::OnPossess(APawn* InPawn)
@@ -157,11 +155,7 @@ void AGASPPlayerController::OnRep_MoverPawn()
 void AGASPPlayerController::OnMoveTriggered(const FInputActionValue& Value)
 {
 	CHECK_MOVER
-	FVector2D InputValue = Value.Get<FVector2D>();
-	if (InputValue.Size() > 0.1f)
-	{
-		MoverCharacter->ReceiveMoveInput(Value.Get<FVector2D>());
-	}
+	MoverCharacter->ReceiveMoveInput(Value.Get<FVector2D>());
 }
 
 void AGASPPlayerController::OnMoveCompleted(const FInputActionValue& Value)
@@ -176,11 +170,8 @@ void AGASPPlayerController::OnMoveCompleted(const FInputActionValue& Value)
 void AGASPPlayerController::OnLookTriggered(const FInputActionValue& Value)
 {
 	FVector2D InputValue = Value.Get<FVector2D>();
-	if (InputValue.Size() > 0.1f)
-	{
-		AddYawInput(InputValue.X);
-		AddPitchInput(InputValue.Y);
-	}
+	AddYawInput(InputValue.X);
+	AddPitchInput(InputValue.Y);
 }
 
 void AGASPPlayerController::OnJumpStarted(const FInputActionValue& Value)

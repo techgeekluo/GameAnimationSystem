@@ -17,9 +17,15 @@ class GAMEANIMATIONSYSTEM_API UGASPMoverComponent : public UCharacterMoverCompon
 public:
 	UGASPMoverComponent();
 	
+protected:
 	virtual void BeginPlay() override;
 
-	
+protected:
+	UFUNCTION() void OnMoverCompPreSimulateTick(const FMoverTimeStep& TimeStep, const FMoverInputCmdContext& InputCmd);
+	UFUNCTION() void OnMoverCompPostFinalize(const FMoverSyncState& SyncState, const FMoverAuxStateContext& AuxState);
+	UFUNCTION() void OnMoverCompBasedMovementApplied(const FTransform& TransformDelta, const FMoverTimeStep& TimeStep);
 
-
+private:
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	FName CachedMovementMode;
 };

@@ -72,6 +72,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "GASP|Inputs|Locomotion")
 	UInputAction* IA_Jump;
 
+public:
+	FORCEINLINE UInputAction* GetMoveInputAction() const { return IA_Move; }
+
 
 	// ---------------------------------------------------------------------
 	// Combat Inputs

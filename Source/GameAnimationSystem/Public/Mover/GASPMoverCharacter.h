@@ -5,8 +5,10 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "MoverSimulationTypes.h"
+#include "MoverDataModelTypes.h"
 #include "Camera/GASPCameraInterface.h"
-#include "Types/GASPLocomotionTypes.h"
+#include "GASPMoverInputs.h"
+#include "GASPMoverCharacterInterface.h"
 #include "GASPMoverCharacter.generated.h"
 
 /**
@@ -16,6 +18,7 @@ UCLASS()
 class GAMEANIMATIONSYSTEM_API AGASPMoverCharacter : 
 	public APawn, 
 	public IGASPCameraInterface,
+	public IGASPMoverCharacterInterface,
 	public IMoverInputProducerInterface
 {
 	GENERATED_BODY()
@@ -25,6 +28,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
 	virtual void CalcCamera(float DeltaTime, FMinimalViewInfo& ViewInfo) override;
 
 protected:
@@ -58,6 +62,16 @@ public:
 
 
 	/**
+	* IGASPMoverInterface
+	*/
+public:
+	virtual void GetAnimationProperties_Implementation(
+		FGASPEssentialStates& EssentialStates,
+		FGASPEssentialValues& EssentialValues
+	) const override;
+
+
+	/**
 	* IMoverInputProducerInterface
 	*/
 protected:
@@ -68,6 +82,11 @@ protected:
 
 	UFUNCTION(BlueprintImplementableEvent, DisplayName = "On Produce Input", meta = (ScriptName = "OnProduceInput"))
 	FMoverInputCmdContext OnProduceInputInBlueprint(float DeltaMs, FMoverInputCmdContext InputCmd);
+
+protected:
+	FVector2D GetMoveInput2D() const;
+	FVector GetMoveInputIntent() const;
+	FRotator GetAimingRotation() const;
 
 private:
 	bool bHasProduceInputInBpFunc = false;
@@ -99,4 +118,36 @@ private:
 	UPROPERTY(EditAnywhere, Category = "GASP|Locomotion")
 	bool bMaintainLastInputOrientation = false;
 
+protected:
+	// 用于在「模拟帧」获取实时的输入值
+	class UEnhancedPlayerInput* EnhancedInput;
+	class UInputAction* IA_Move;
+
+	FCharacterDefaultInputs MoverCharacterInputs_PostSim;
+	FGASPMoverInputs MoverCustomInputs_PostSim;
+
+	FVector FloorNormal;
+	FVector FloorLocation;
+
+	float ControlRotationRate;
+	FRotator LastControlRotation;
+
+	bool bTwinStickMode = false;
+	FRotator TwinStickAimRotation;
+	
+	float SmoothedAnalogInputAmount = 1.f;
+
+	EGASPMovementMode MovementMode = EGASPMovementMode::OnGround;
+
+
+
+
+	/**
+	* Combat
+	*/
+private:
+	UPROPERTY()
+	AActor* TargetedActor;
+
+	TArray<AActor*> TargetableActors;
 };

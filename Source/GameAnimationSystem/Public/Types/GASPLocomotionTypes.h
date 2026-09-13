@@ -6,10 +6,11 @@
 UENUM(BlueprintType)
 enum class EGASPMovementMode : uint8
 {
-	InAir,
 	OnGround,
-	OnWater,		// TODO
-	UnderWater,		// TODO
+	Falling,
+	Flying,		// TODO
+	Swimming,	// TODO
+	Ragdoll,	// TODO
 };
 
 UENUM(BlueprintType)
@@ -54,5 +55,3 @@ enum class EGASPMoveStickMode : uint8
 	VariableSpeed_SingleGait,	// 可变速度，单一步态：Stick输入值影响速度，但不影响步态
 	VariableSpeed_WalkRun		// 可变速度，走跑切换：Stick输入值影响速度，拉满会切位跑步
 };
-
-

@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+﻿// Copyright Epic Games, Inc. All Rights Reserved.
 
 using UnrealBuildTool;
 
@@ -38,9 +38,10 @@ public class GameAnimationSystem : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-                "EnhancedInput",
-                "UMG",
+                "NetCore",
                 "NetworkPrediction",
+                "EnhancedInput",
+				"DrawDebugLibrary",
                 "AnimationWarpingRuntime",
                 "MotionWarping",
                 "Mover",

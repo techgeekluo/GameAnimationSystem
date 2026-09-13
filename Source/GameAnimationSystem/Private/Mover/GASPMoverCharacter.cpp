@@ -4,11 +4,18 @@
 #include "Mover/GASPMoverCharacter.h"
 #include "Mover/GASPMoverComponent.h"
 #include "Camera/GASPCameraComponent.h"
+#include "GASPPlayerController.h"
 #include "GASPFunctionLibrary.h"
-#include "MoverComponent.h"
+#include "EnhancedPlayerInput.h"
 #include "Components/CapsuleComponent.h"
+#include "MoverComponent.h"
+#include "MoveLibrary/FloorQueryUtils.h"
 #include "DefaultMovementSet/CharacterMoverComponent.h"
 #include "Engine/BlueprintGeneratedClass.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/GameplayStatics.h"
+#include "DrawDebugLibrary.h"
 #include "GameAnimationSystem.h"
 
 AGASPMoverCharacter::AGASPMoverCharacter(const FObjectInitializer& ObjectInitializer)
@@ -49,7 +56,83 @@ void AGASPMoverCharacter::BeginPlay()
 	Mesh->AddTickPrerequisiteComponent(Mover);
 	Mesh->AddTickPrerequisiteActor(this);
 
+	if (auto PC = Cast<AGASPPlayerController>(GetController()))
+	{
+		EnhancedInput = Cast<UEnhancedPlayerInput>(PC->PlayerInput);
+		IA_Move = PC->GetMoveInputAction();
+		if (!IA_Move) UE_LOG(LogGASPMover, Error, TEXT("Character Get IA_Move Failed..."));
+	}
 	bHasProduceInputInBpFunc = UGASPFunctionLibrary::IsFuncImplementedInBlueprint(this, TEXT("OnProduceInputInBlueprint"));
+}
+
+void AGASPMoverCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (!Mover || !Mesh) return;
+
+	// 1. Cache Inputs From Mover
+	//	  _PreSim 表示的是发送给 Mover 的输入，这些值不会被复制，并且只会在本地控制的 Pawn 上设置
+	//	  _PostSim 表示的是从 Mover 中获取出来的输入，这些输入可以安全地用于控制其他系统，例如动画/物理等
+	FMoverDataCollection InputCollection = Mover->GetLastInputCmd().InputCollection;
+	if (auto FoundedPtr = InputCollection.FindDataByType<FCharacterDefaultInputs>())
+	{
+		MoverCharacterInputs_PostSim = *FoundedPtr;
+	}
+	if (auto FoundedPtr = InputCollection.FindDataByType<FGASPMoverInputs>())
+	{
+		MoverCustomInputs_PostSim = *FoundedPtr;
+	}
+
+	// 2. Update Floor Values: 其他各种系统可能需要知道角色所在地板的信息
+	bool bDidFindFloor = false;
+	FFloorCheckResult CheckFloorResult;
+	UFloorQueryUtils::TryFindFloor(Mover, bDidFindFloor, CheckFloorResult);
+	FloorNormal = CheckFloorResult.bBlockingHit ? CheckFloorResult.HitResult.ImpactNormal : FVector::ZeroVector;
+	FloorLocation = CheckFloorResult.bBlockingHit ? CheckFloorResult.HitResult.ImpactPoint : GetActorLocation();
+
+	// 3. Update Control Rotation Rate: 防止在扫射和瞄准模式下快速旋转相机时旋转不足
+	ControlRotationRate = UKismetMathLibrary::NormalizedDeltaRotator(GetControlRotation(), LastControlRotation).Yaw / DeltaTime;
+	LastControlRotation = GetControlRotation();
+
+	// 4. Update Slide Audio : （TODO）
+
+	// 5. Update Targeted Actor: 近战动作游戏的锁敌攻击，可根据业务更改逻辑（TODO）
+	if (TargetableActors.IsEmpty())
+	{
+		TargetedActor = nullptr;
+	}
+	else
+	{
+		float Distance;
+		TargetedActor = UGameplayStatics::FindNearestActor(GetActorLocation(), TargetableActors, Distance);
+
+		auto DebugDrawer = UDrawDebugLibrary::MakeDebugDrawer(this);
+		UDrawDebugLibrary::DrawDebugCone(
+			DebugDrawer,
+			TargetedActor->GetActorLocation() + FVector(0.f, 0.f, 150.f),
+			FRotator(0.f, 0.f, 180.f),
+			FDrawDebugLineStyle(),
+			true,
+			20.f,
+			10.f,
+			4
+		);
+	}
+
+	// 6. Update Twin Stick Mode: 模拟一种基本的双摇杆控制方案，其中 Pawn 沿右手拇指摇杆的方向旋转（TODO）
+
+	// 7. Update Smoothed Analog Input Amount
+	float MoveInputAmount = GetMoveInput2D().Size();
+	SmoothedAnalogInputAmount = UKismetMathLibrary::FInterpTo_Constant(
+		SmoothedAnalogInputAmount,
+		MoveInputAmount,
+		DeltaTime,
+		MoveInputAmount > SmoothedAnalogInputAmount ? 100.f : 2.f
+	);
+	
+	// 8. Debug Draws
+
 }
 
 void AGASPMoverCharacter::CalcCamera(float DeltaTime, FMinimalViewInfo& ViewInfo)
@@ -96,6 +179,11 @@ void AGASPMoverCharacter::SetOwnerMeshNoSee_Implementation(bool bNewOwnerNoSee)
 	Mesh->SetOwnerNoSee(bNewOwnerNoSee);
 }
 
+void AGASPMoverCharacter::GetAnimationProperties_Implementation(FGASPEssentialStates& EssentialStates, FGASPEssentialValues& EssentialValues) const
+{
+
+}
+
 void AGASPMoverCharacter::ProduceInput_Implementation(int32 SimTimeMs, FMoverInputCmdContext& InputCmdResult)
 {
 	// 1) C++ 侧填输入（派生类重写 OnProduceInput）
@@ -107,69 +195,67 @@ void AGASPMoverCharacter::ProduceInput_Implementation(int32 SimTimeMs, FMoverInp
 		InputCmdResult = OnProduceInputInBlueprint((float)SimTimeMs, InputCmdResult);
 	}
 
-	// 3) 统一消费边沿量：一次输入只触发一次（一个渲染帧跑多个模拟步时，跳跃不会重复触发）
-	
+	// 3) 统一消费边沿量：一次输入只触发一次（一个渲染帧跑多个模拟步时，不会重复触发）
+	bIsJumpJustPressed = false;
 }
 
 void AGASPMoverCharacter::OnProduceInput(float DeltaMs, FMoverInputCmdContext& InputCmdResult)
 {
 	// 1) 取出（没有就创建）角色输入结构体 —— 返回的是引用，直接改
-	FCharacterDefaultInputs& CharacterInputs =
-		InputCmdResult.InputCollection.FindOrAddMutableDataByType<FCharacterDefaultInputs>();
+	auto& CharacterInputs = InputCmdResult.InputCollection.FindOrAddMutableDataByType<FCharacterDefaultInputs>();
 
-	// 2) 没有玩家控制器（AI 未 possess / 网络模拟代理）→ 给一份"什么都不做"的输入
-	APlayerController* PC = Cast<APlayerController>(GetController());
-	if (!PC)
-	{
-		CharacterInputs.ControlRotation = GetActorRotation();
-		CharacterInputs.SetMoveInput(EMoveInputType::DirectionalIntent, FVector::ZeroVector);
-		CharacterInputs.OrientationIntent = FVector::ZeroVector;
-		CharacterInputs.bIsJumpJustPressed = false;
-		CharacterInputs.bIsJumpPressed = false;
-		return;
-	}
+	// 2) 使用玩家或AI控制器所需的移动方向设置方向输入
+	CharacterInputs.SetMoveInput(EMoveInputType::DirectionalIntent, GetMoveInputIntent());
 
-	// 3) 控制旋转 = 玩家相机朝向。所有输入都以它为参照系
-	CharacterInputs.ControlRotation = PC->GetControlRotation();
-
-	// 4) 移动输入 → 世界空间
-	if (CachedMoveInputVelocity.IsNearlyZero())
-	{
-		// 方向意图：把「相机空间」的输入旋到世界空间（X=前后，Y=左右）
-		const FVector WorldMoveIntent = CharacterInputs.ControlRotation.RotateVector(CachedMoveInputIntent);
-		CharacterInputs.SetMoveInput(EMoveInputType::DirectionalIntent, WorldMoveIntent);
-	}
-	else
-	{
-		// 速度输入（AI / 导航 / 过场）：世界空间 cm/s，优先
-		CharacterInputs.SetMoveInput(EMoveInputType::Velocity, CachedMoveInputVelocity);
-	}
-
-	// 5) 朝向意图（零向量 = 不改变朝向）
-	CharacterInputs.OrientationIntent = FVector::ZeroVector;
-
-	// 只用水平分量判断"有没有移动意图"：速度输入可能带垂直分量（下落速度），不能拿来定朝向
-	const FVector MoveDir2D(CharacterInputs.GetMoveInput().X, CharacterInputs.GetMoveInput().Y, 0.f);
-	if (MoveDir2D.SizeSquared() > UE_KINDA_SMALL_NUMBER)
-	{
-		const bool bUseCameraFacing = true;	// TODO：设计角色朝向的逻辑
-
-		CharacterInputs.OrientationIntent = bUseCameraFacing
-			? CharacterInputs.ControlRotation.Vector().GetSafeNormal()	// 朝相机（俯仰会被模式丢掉，只留 Yaw）
-			: MoveDir2D.GetSafeNormal();								// 朝移动方向
-
-		LastAffirmativeOrientationIntent = CharacterInputs.OrientationIntent;
-	}
-	else if (bMaintainLastInputOrientation)
-	{
-		CharacterInputs.OrientationIntent = LastAffirmativeOrientationIntent;
-	}
-
-	// 6) 跳跃：只写这两个 bool，其余交给 UCharacterMoverComponent（bHandleJump 默认就是开的）
-	CharacterInputs.bIsJumpPressed = bIsJumpPressed;
+	// 3) 设置瞄准旋转和跳跃输入状态
+	CharacterInputs.ControlRotation = GetAimingRotation();
 	CharacterInputs.bIsJumpJustPressed = bIsJumpJustPressed;
 
-	bIsJumpJustPressed = false;
+}
+
+FVector2D AGASPMoverCharacter::GetMoveInput2D() const
+{
+	if (EnhancedInput && IA_Move)
+	{
+		return EnhancedInput->GetActionValue(IA_Move).Get<FVector2D>();
+	}
+	return FVector2D(CachedMoveInputIntent.X, CachedMoveInputIntent.Y);
+}
+
+FVector AGASPMoverCharacter::GetMoveInputIntent() const
+{
+	// 返回AI控制器的所需移动方向，或玩家在相机空间中的当前移动输入方向
+	if (auto PC = Cast<APlayerController>(GetController()))
+	{
+		FVector2D MoveInput2D = GetMoveInput2D();
+		FVector MoveInputValue = FVector(
+			FMath::Clamp(MoveInput2D.Y, -1.f, 1.f),	// FVector.X = 前（来自 IA_Move 的 Y）
+			FMath::Clamp(MoveInput2D.X, -1.f, 1.f),	// FVector.Y = 右（来自 IA_Move 的 X）
+			0);
+
+		FRotator ControlRot = GetControlRotation();
+		return UKismetMathLibrary::GreaterGreater_VectorRotator(
+			UKismetMathLibrary::ClampVectorSize(MoveInputValue, 0.f, 1.f),
+			MovementMode == EGASPMovementMode::Flying ? ControlRot : FRotator(0.f, ControlRot.Yaw, 0.f)
+		).GetSafeNormal();
+	}
+
+	// TODO: 没有玩家控制器（AI 未 possess / 网络模拟代理）→ 走 NavMover
+	return FVector();
+}
+
+FRotator AGASPMoverCharacter::GetAimingRotation() const
+{
+	// 返回 AimingRotation，这是 Pawn 在 Strafe 或 Aiming 旋转模式下应该查看的旋转 
+	if (TargetedActor)
+	{
+		return FRotator(
+			0.f,
+			UKismetMathLibrary::Conv_VectorToRotator(TargetedActor->GetActorLocation() - GetActorLocation()).Yaw,
+			0.f
+		);
+	}
+	return bTwinStickMode ? TwinStickAimRotation : GetControlRotation();
 }
 
 void AGASPMoverCharacter::ReceiveMoveInput(const FVector2D& MoveInput)
