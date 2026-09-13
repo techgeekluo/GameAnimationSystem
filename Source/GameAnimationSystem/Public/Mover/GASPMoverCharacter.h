@@ -40,6 +40,11 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UGASPMoverComponent* Mover;
 
+public:
+	FORCEINLINE USkeletalMeshComponent* GetMesh() const { return Mesh; }
+	FORCEINLINE UGASPCameraComponent* GetCameraComponent() const { return Camera; }
+	FORCEINLINE UGASPMoverComponent* GetMoverComponent() const { return Mover; }
+
 	/**
 	* IGASPCameraInterface
 	*/

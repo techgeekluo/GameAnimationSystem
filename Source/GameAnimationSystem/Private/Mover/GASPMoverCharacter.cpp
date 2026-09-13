@@ -39,12 +39,15 @@ AGASPMoverCharacter::AGASPMoverCharacter(const FObjectInitializer& ObjectInitial
 	Camera->SetVisibility(false);
 
 	Mover = CreateDefaultSubobject<UGASPMoverComponent>(TEXT("CharacterMoverComponent"));
-	Mover->SetPrimaryVisualComponent(Capsule);
+	Mover->SetPrimaryVisualComponent(Mesh);
 }
 
 void AGASPMoverCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	Mesh->AddTickPrerequisiteComponent(Mover);
+	Mesh->AddTickPrerequisiteActor(this);
 
 	bHasProduceInputInBpFunc = UGASPFunctionLibrary::IsFuncImplementedInBlueprint(this, TEXT("OnProduceInputInBlueprint"));
 }

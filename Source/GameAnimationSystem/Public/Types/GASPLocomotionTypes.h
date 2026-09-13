@@ -4,6 +4,15 @@
 #include "GASPLocomotionTypes.generated.h"
 
 UENUM(BlueprintType)
+enum class EGASPMovementMode : uint8
+{
+	InAir,
+	OnGround,
+	OnWater,		// TODO
+	UnderWater,		// TODO
+};
+
+UENUM(BlueprintType)
 enum class EGASPGait : uint8
 {
 	Walking,
@@ -27,12 +36,14 @@ enum class EGASPRotationMode : uint8
 };
 
 UENUM(BlueprintType)
-enum class EGASPMovementMode : uint8
+enum class EGASPMoveDirection : uint8
 {
-	InAir,
-	OnGround,
-	OnWater,		// TODO
-	UnderWater,		// TODO
+	F,
+	B,
+	FL,
+	FR,
+	BL,
+	BR
 };
 
 UENUM(BlueprintType)

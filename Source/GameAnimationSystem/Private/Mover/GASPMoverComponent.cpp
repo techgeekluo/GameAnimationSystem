@@ -5,7 +5,7 @@
 
 UGASPMoverComponent::UGASPMoverComponent()
 {
-	bSyncInputsForSimProxy = true;
+	bSyncInputsForSimProxy = true;	// 让远端也读到输入
 }
 
 void UGASPMoverComponent::BeginPlay()
